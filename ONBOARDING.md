@@ -76,6 +76,11 @@ SMTP relay service for sending emails to taxpayers, triggered on various system 
 #### direct-file/state-api
 Backend service responsible for the handling A2A traffic from state tax software providers via a REST API. These APIs are used to access federal return data (XML and return status). After a taxpayer submits their federal return, they may authorize the transfer of their federal return data with their state and the state tax software will pull that data through state-api.
 
+#### direct-file/mcp-server
+> **PROTOTYPE** — This is a proof-of-concept and is not intended for production use.
+
+An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that wraps the Direct File backend API, exposing tax-return operations as tools, reference data as resources, and guided workflows as prompts. This allows MCP-compatible AI agents (e.g., Claude, GPT) to interact with the Direct File system through a conversational interface. See the [mcp-server README](/direct-file/mcp-server/README.md) for full details.
+
 ## Local Environment Setup
 
 __Table of Contents__
@@ -109,6 +114,7 @@ Table of Contents
 * Maven
 * SBT
 * coursier
+* Node.js (20+) — required for df-client and the MCP server
 * Docker for Desktop
 
 There are instructions below for using `Homebrew` or `SDKMAN` to install the required software. You should only follow one path or the other, unless the instructions tell you to do otherwise (i.e. `SDKMAN` doesn't currently support `coursier`, so you might use `Homebrew` for that).
@@ -416,6 +422,51 @@ docker compose down state-api
 #### Build the client app
 
 Need to run/develop the client app? Check out the [df-client/README](/direct-file/df-client/README.md) for info on getting your local environment setup.
+
+#### Build and run the MCP server (prototype)
+
+The MCP server is a Node.js application that connects to the running Direct File backend API. Make sure the backend is running first (either via Docker or locally).
+
+1. Navigate to the `mcp-server` directory and install dependencies:
+
+    ```sh
+    cd direct-file/mcp-server
+    npm install
+    ```
+
+2. Build and start the server:
+
+    ```sh
+    npm run build
+    npm start
+    ```
+
+    By default it connects to the backend at `http://localhost:8080`. Override this with the `DIRECT_FILE_API_URL` environment variable if needed.
+
+3. To connect an MCP client (e.g., Claude Desktop or VS Code), add the following to your MCP client configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "direct-file": {
+          "command": "node",
+          "args": ["/path/to/direct-file/mcp-server/dist/index.js"],
+          "env": {
+            "DIRECT_FILE_API_URL": "http://localhost:8080",
+            "DIRECT_FILE_USER_ID": "00000000-0000-0000-0000-000000000000"
+          }
+        }
+      }
+    }
+    ```
+
+4. To run the MCP server test suite:
+
+    ```sh
+    npm test
+    ```
+
+See the [mcp-server README](/direct-file/mcp-server/README.md) for full configuration options and details on available tools, resources, and prompts.
 
 ## Application Tests
 
