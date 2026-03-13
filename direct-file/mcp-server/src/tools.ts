@@ -35,30 +35,50 @@ const PATH_ALIASES: Record<string, string> = {
   "/secondaryFiler/isDependent": "/secondaryFiler/canBeClaimed",
 };
 
-/**
- * When the AI sets /primaryFiler/address as a single address fact,
- * expand it into the individual /address/* fields the backend expects.
- */
-function expandAddressFact(
-  path: string,
-  wrapper: FactTypeWithItem
-): Record<string, FactTypeWithItem> | null {
-  if (path !== "/address" && path !== "/primaryFiler/address") return null;
-  if (wrapper.$type !== "gov.irs.factgraph.persisters.AddressWrapper") return null;
+/** Fields under /primaryFiler/* or /secondaryFiler/* that are actually
+ *  writable on the /filers/#uuid/* collection path. */
+const FILER_FIELDS = new Set([
+  "firstName", "lastName", "dateOfBirth", "tin",
+  "canBeClaimed", "isBlind", "isDisabled", "isStudent",
+  "occupation", "hasIpPin", "ipPin", "isUsCitizenFullYear",
+  "writableMiddleInitial",
+]);
 
-  const addr = wrapper.item as {
-    streetAddress: string;
-    city: string;
-    postalCode: string;
-    stateOrProvence: string;
-  };
-  const stringType = "gov.irs.factgraph.persisters.StringWrapper";
-  return {
-    "/address/streetAddress": { $type: stringType, item: addr.streetAddress },
-    "/address/city": { $type: stringType, item: addr.city },
-    "/address/postalCode": { $type: stringType, item: addr.postalCode },
-    "/address/stateOrProvence": { $type: stringType, item: addr.stateOrProvence },
-  };
+/**
+ * Resolve /primaryFiler/<field> and /secondaryFiler/<field> to the
+ * writable /filers/#<uuid>/<field> paths. Returns the path unchanged
+ * if it doesn't match or the field isn't a writable filer field.
+ */
+function resolveFilerPath(
+  path: string,
+  facts: FactsMap
+): string {
+  const primaryMatch = path.match(/^\/primaryFiler\/(.+)$/);
+  const secondaryMatch = path.match(/^\/secondaryFiler\/(.+)$/);
+  const match = primaryMatch ?? secondaryMatch;
+  if (!match || !match[1]) return path;
+
+  const field = match[1];
+  if (!FILER_FIELDS.has(field)) return path;
+
+  const isPrimary = !!primaryMatch;
+
+  // Find the filer UUID from the existing facts
+  const filersCollection = facts["/filers"];
+  if (!filersCollection || filersCollection.$type !== "gov.irs.factgraph.persisters.CollectionWrapper") {
+    return path; // No filers collection — can't resolve
+  }
+  const items = (filersCollection.item as { items: string[] }).items;
+  for (const uuid of items) {
+    const isPrimaryFact = facts[`/filers/#${uuid}/isPrimaryFiler`];
+    if (!isPrimaryFact) continue;
+    const isPrimaryFiler = isPrimaryFact.item === true;
+    if ((isPrimary && isPrimaryFiler) || (!isPrimary && !isPrimaryFiler)) {
+      return `/filers/#${uuid}/${field}`;
+    }
+  }
+
+  return path; // Couldn't resolve — return as-is
 }
 
 export function registerTools(server: McpServer, api: DirectFileApiClient) {
@@ -208,21 +228,24 @@ export function registerTools(server: McpServer, api: DirectFileApiClient) {
       ),
     },
     async ({ taxReturnId, facts }) => {
-      // Validate all facts, applying path aliases and address expansion.
+      // Fetch existing facts to resolve /primaryFiler/* → /filers/#uuid/* paths
+      let existingFacts: FactsMap = {};
+      try {
+        const taxReturn = await api.getTaxReturn(taxReturnId);
+        existingFacts = taxReturn.facts ?? {};
+      } catch {
+        // If we can't fetch, proceed with unresolved paths
+      }
+
+      // Validate all facts, applying path aliases and filer path resolution.
       const factsMap: FactsMap = {};
       const errors: string[] = [];
       for (const f of facts) {
         try {
-          const resolvedPath = PATH_ALIASES[f.path] ?? f.path;
+          const aliased = PATH_ALIASES[f.path] ?? f.path;
+          const resolved = resolveFilerPath(aliased, existingFacts);
           const wrapper = inferFactWrapper(f.factType, f.value);
-
-          // Expand address into individual /address/* fields
-          const expanded = expandAddressFact(resolvedPath, wrapper);
-          if (expanded) {
-            Object.assign(factsMap, expanded);
-          } else {
-            factsMap[resolvedPath] = wrapper;
-          }
+          factsMap[resolved] = wrapper;
         } catch (err: unknown) {
           errors.push(`${f.path}: ${(err as Error).message}`);
         }
@@ -241,8 +264,9 @@ export function registerTools(server: McpServer, api: DirectFileApiClient) {
             try {
               await api.updateTaxReturn(taxReturnId, { facts: { [path]: wrapper } });
               savedCount++;
-            } catch {
-              errors.push(`${path}: backend rejected this fact`);
+            } catch (innerErr: unknown) {
+              const msg = innerErr instanceof Error ? innerErr.message : String(innerErr);
+              errors.push(`${path}: ${msg}`);
             }
           }
 

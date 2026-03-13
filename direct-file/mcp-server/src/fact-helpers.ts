@@ -97,9 +97,11 @@ export function dayFact(year: number, month: number, day: number) {
   if (d.getFullYear() !== year || d.getMonth() !== month - 1 || d.getDate() !== day) {
     throw new FactValidationError("date", `${year}-${month}-${day} is not a valid calendar date`);
   }
+  const mm = String(month).padStart(2, "0");
+  const dd = String(day).padStart(2, "0");
   return {
     $type: "gov.irs.factgraph.persisters.DayWrapper",
-    item: { year, month, day },
+    item: { date: `${year}-${mm}-${dd}` },
   };
 }
 
@@ -201,10 +203,16 @@ export function phoneFact(phoneNumber: string) {
   if (/^[01]/.test(officeCode)) {
     throw new FactValidationError("phone", `office code cannot start with 0 or 1, got "${officeCode}"`);
   }
-  // Return in the format the backend expects: +1 prefix with raw digits
+  // Return in the format the backend expects: E164Wrapper with structured phone number
+  const lineNumber = normalized.slice(6, 10);
   return {
-    $type: "gov.irs.factgraph.persisters.PhoneWrapper",
-    item: `+1${normalized}`,
+    $type: "gov.irs.factgraph.persisters.E164Wrapper",
+    item: {
+      $type: "gov.irs.factgraph.types.UsPhoneNumber",
+      areaCode,
+      officeCode,
+      lineNumber,
+    },
   };
 }
 

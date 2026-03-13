@@ -87,10 +87,10 @@ describe("fact-helpers", () => {
   });
 
   describe("dayFact", () => {
-    it("wraps year/month/day", () => {
+    it("wraps year/month/day as date string", () => {
       expect(dayFact(1990, 3, 15)).toEqual({
         $type: "gov.irs.factgraph.persisters.DayWrapper",
-        item: { year: 1990, month: 3, day: 15 },
+        item: { date: "1990-03-15" },
       });
     });
 
@@ -205,22 +205,37 @@ describe("fact-helpers", () => {
   describe("phoneFact", () => {
     it("normalizes a hyphenated phone number", () => {
       expect(phoneFact("202-555-1234")).toEqual({
-        $type: "gov.irs.factgraph.persisters.PhoneWrapper",
-        item: "+12025551234",
+        $type: "gov.irs.factgraph.persisters.E164Wrapper",
+        item: {
+          $type: "gov.irs.factgraph.types.UsPhoneNumber",
+          areaCode: "202",
+          officeCode: "555",
+          lineNumber: "1234",
+        },
       });
     });
 
     it("normalizes digits-only input", () => {
       expect(phoneFact("2025551234")).toEqual({
-        $type: "gov.irs.factgraph.persisters.PhoneWrapper",
-        item: "+12025551234",
+        $type: "gov.irs.factgraph.persisters.E164Wrapper",
+        item: {
+          $type: "gov.irs.factgraph.types.UsPhoneNumber",
+          areaCode: "202",
+          officeCode: "555",
+          lineNumber: "1234",
+        },
       });
     });
 
     it("strips +1 prefix and normalizes", () => {
       expect(phoneFact("+12025551234")).toEqual({
-        $type: "gov.irs.factgraph.persisters.PhoneWrapper",
-        item: "+12025551234",
+        $type: "gov.irs.factgraph.persisters.E164Wrapper",
+        item: {
+          $type: "gov.irs.factgraph.types.UsPhoneNumber",
+          areaCode: "202",
+          officeCode: "555",
+          lineNumber: "1234",
+        },
       });
     });
 
@@ -277,7 +292,7 @@ describe("fact-helpers", () => {
       expect(result.$type).toBe(
         "gov.irs.factgraph.persisters.DayWrapper"
       );
-      expect(result.item).toEqual({ year: 2000, month: 1, day: 1 });
+      expect(result.item).toEqual({ date: "2000-01-01" });
     });
 
     it("dispatches date (alias for day)", () => {
@@ -294,13 +309,13 @@ describe("fact-helpers", () => {
     it("dispatches date from string like 'March 15, 1988'", () => {
       const result = inferFactWrapper("date", "March 15, 1988");
       expect(result.$type).toBe("gov.irs.factgraph.persisters.DayWrapper");
-      expect(result.item).toEqual({ year: 1988, month: 3, day: 15 });
+      expect(result.item).toEqual({ date: "1988-03-15" });
     });
 
     it("dispatches date from string like '1985-07-22'", () => {
       const result = inferFactWrapper("date", "1985-07-22");
       expect(result.$type).toBe("gov.irs.factgraph.persisters.DayWrapper");
-      expect(result.item).toEqual({ year: 1985, month: 7, day: 22 });
+      expect(result.item).toEqual({ date: "1985-07-22" });
     });
 
     it("rejects unparseable date strings", () => {
@@ -362,9 +377,14 @@ describe("fact-helpers", () => {
     it("dispatches phone", () => {
       const result = inferFactWrapper("phone", "202-555-1234");
       expect(result.$type).toBe(
-        "gov.irs.factgraph.persisters.PhoneWrapper"
+        "gov.irs.factgraph.persisters.E164Wrapper"
       );
-      expect(result.item).toBe("+12025551234");
+      expect(result.item).toEqual({
+        $type: "gov.irs.factgraph.types.UsPhoneNumber",
+        areaCode: "202",
+        officeCode: "555",
+        lineNumber: "1234",
+      });
     });
 
     it("dispatches ssn from string format", () => {
