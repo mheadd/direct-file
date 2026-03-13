@@ -69,6 +69,21 @@ describe("fact-helpers", () => {
         item: "52000.00",
       });
     });
+
+    it("strips commas from dollar amounts", () => {
+      expect(dollarFact("1,234.56")).toEqual({
+        $type: "gov.irs.factgraph.persisters.DollarWrapper",
+        item: "1234.56",
+      });
+    });
+
+    it("rejects invalid dollar format", () => {
+      expect(() => dollarFact("abc")).toThrow("Invalid dollar");
+    });
+
+    it("rejects more than 2 decimal places", () => {
+      expect(() => dollarFact("100.123")).toThrow("Invalid dollar");
+    });
   });
 
   describe("dayFact", () => {
@@ -77,6 +92,18 @@ describe("fact-helpers", () => {
         $type: "gov.irs.factgraph.persisters.DayWrapper",
         item: { year: 1990, month: 3, day: 15 },
       });
+    });
+
+    it("rejects invalid calendar date (Feb 30)", () => {
+      expect(() => dayFact(2024, 2, 30)).toThrow("not a valid calendar date");
+    });
+
+    it("rejects month out of range", () => {
+      expect(() => dayFact(2024, 13, 1)).toThrow("month must be 1-12");
+    });
+
+    it("rejects year before 1862", () => {
+      expect(() => dayFact(1800, 1, 1)).toThrow("year must be an integer between 1862");
     });
   });
 
@@ -96,6 +123,22 @@ describe("fact-helpers", () => {
         item: { area: "123", group: "45", serial: "6789" },
       });
     });
+
+    it("rejects area 000", () => {
+      expect(() => tinFact("000", "45", "6789")).toThrow('area cannot be "000"');
+    });
+
+    it("rejects area 666", () => {
+      expect(() => tinFact("666", "45", "6789")).toThrow('area cannot be "666"');
+    });
+
+    it("rejects non-digit area", () => {
+      expect(() => tinFact("12a", "45", "6789")).toThrow("must be exactly 3 digits");
+    });
+
+    it("rejects wrong-length group", () => {
+      expect(() => tinFact("123", "4", "6789")).toThrow("must be exactly 2 digits");
+    });
   });
 
   describe("addressFact", () => {
@@ -108,20 +151,38 @@ describe("fact-helpers", () => {
           city: "Springfield",
           postalCode: "62704",
           stateOrProvence: "IL",
-          country: "US",
+          country: "United States of America",
         },
       });
     });
 
-    it("allows overriding country", () => {
-      const result = addressFact("456 Elm", "Toronto", "M5V 2H1", "ON", "CA");
-      expect(result.item).toEqual({
-        streetAddress: "456 Elm",
-        city: "Toronto",
-        postalCode: "M5V 2H1",
-        stateOrProvence: "ON",
-        country: "CA",
-      });
+    it("accepts ZIP+4 format", () => {
+      const result = addressFact("123 Main St", "Springfield", "62704-1234", "IL");
+      expect(result.item.postalCode).toBe("62704-1234");
+    });
+
+    it("rejects street longer than 35 chars", () => {
+      expect(() => addressFact("A".repeat(36), "Springfield", "62704", "IL")).toThrow(
+        "streetAddress must be 1-35 characters"
+      );
+    });
+
+    it("rejects lowercase state code", () => {
+      expect(() => addressFact("123 Main", "Springfield", "62704", "il")).toThrow(
+        "2-letter uppercase code"
+      );
+    });
+
+    it("rejects invalid postal code", () => {
+      expect(() => addressFact("123 Main", "Springfield", "6270", "IL")).toThrow(
+        "postalCode must be 5 digits"
+      );
+    });
+
+    it("rejects city with numbers", () => {
+      expect(() => addressFact("123 Main", "Spring3field", "62704", "IL")).toThrow(
+        "city must contain only letters and spaces"
+      );
     });
   });
 
@@ -142,11 +203,37 @@ describe("fact-helpers", () => {
   });
 
   describe("phoneFact", () => {
-    it("wraps a phone number string", () => {
-      expect(phoneFact("555-123-4567")).toEqual({
+    it("normalizes a hyphenated phone number", () => {
+      expect(phoneFact("202-555-1234")).toEqual({
         $type: "gov.irs.factgraph.persisters.PhoneWrapper",
-        item: "555-123-4567",
+        item: "+12025551234",
       });
+    });
+
+    it("normalizes digits-only input", () => {
+      expect(phoneFact("2025551234")).toEqual({
+        $type: "gov.irs.factgraph.persisters.PhoneWrapper",
+        item: "+12025551234",
+      });
+    });
+
+    it("strips +1 prefix and normalizes", () => {
+      expect(phoneFact("+12025551234")).toEqual({
+        $type: "gov.irs.factgraph.persisters.PhoneWrapper",
+        item: "+12025551234",
+      });
+    });
+
+    it("rejects too few digits", () => {
+      expect(() => phoneFact("555-1234")).toThrow("expected 10-digit US phone");
+    });
+
+    it("rejects area code starting with 0", () => {
+      expect(() => phoneFact("012-555-1234")).toThrow("area code cannot start with 0 or 1");
+    });
+
+    it("rejects office code starting with 1", () => {
+      expect(() => phoneFact("202-155-1234")).toThrow("office code cannot start with 0 or 1");
     });
   });
 
@@ -255,9 +342,23 @@ describe("fact-helpers", () => {
     });
 
     it("dispatches phone", () => {
-      expect(inferFactWrapper("phone", "555-1234").$type).toBe(
+      const result = inferFactWrapper("phone", "202-555-1234");
+      expect(result.$type).toBe(
         "gov.irs.factgraph.persisters.PhoneWrapper"
       );
+      expect(result.item).toBe("+12025551234");
+    });
+
+    it("dispatches ssn from string format", () => {
+      const result = inferFactWrapper("ssn", "123-45-6789");
+      expect(result.$type).toBe("gov.irs.factgraph.persisters.TinWrapper");
+      expect(result.item).toEqual({ area: "123", group: "45", serial: "6789" });
+    });
+
+    it("dispatches dollar from number", () => {
+      const result = inferFactWrapper("dollar", 52000);
+      expect(result.$type).toBe("gov.irs.factgraph.persisters.DollarWrapper");
+      expect(result.item).toBe("52000.00");
     });
 
     it("throws on unknown fact type", () => {
