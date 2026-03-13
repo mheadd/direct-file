@@ -11,6 +11,14 @@ Direct File was developed by an in-house team of technologists at the IRS. The b
 
 For a more details on the program and its history see https://www.irs.gov/pub/irs-pdf/p5969.pdf and https://www.irs.gov/filing/irs-direct-file-for-free
 
+## About this fork
+
+This is a fork of the [IRS Direct File](https://github.com/IRS-Public/direct-file) repository that adds an experimental [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. The MCP server wraps the Direct File backend API so that AI assistants — such as Claude Desktop or VS Code Copilot Chat — can help taxpayers complete a federal tax return through natural conversation instead of a traditional web-based interview.
+
+The MCP server lives in [`direct-file/mcp-server/`](/direct-file/mcp-server/) and provides tools for creating tax returns, setting and reading facts (taxpayer data), and generating a PDF of the completed return. See the [MCP server README](/direct-file/mcp-server/README.md) for setup instructions, available tools, and design decisions.
+
+> **⚠️ Prototype only** — This is a proof-of-concept. It does not enforce identity verification, PII protections, or audit logging required for real tax filing, and it does not submit returns to the IRS.
+
 ## Where do I start?
 See [ONBOARDING.md](/ONBOARDING.md) if you want to jump into running Direct File locally
 
