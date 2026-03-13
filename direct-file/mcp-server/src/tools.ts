@@ -137,28 +137,7 @@ export function registerTools(server: McpServer, api: DirectFileApiClient) {
   // -------------------------------------------------------------------
   server.tool(
     "set_fact",
-    `Set one or more facts on a tax return. Facts are key-value pairs where the key is a fact path (e.g. "/primaryFiler/firstName") and the value is typed.
-
-Supported factType values and their expected formats:
-
-- **boolean**: true or false
-- **string**: any text string
-- **int**: whole number (no decimals)
-- **dollar**: string with up to 2 decimal places, e.g. "52000.00" or "1234.56". Commas allowed. Numbers also accepted.
-- **date**: object with { year (1862-2100), month (1-12), day (1-31) } — must be a valid calendar date
-- **enum**: object with { value: "optionName", enumOptionsPath: "/path/to/options" }
-- **tin** / **ssn**: either a string "123-45-6789" or object { area: "123", group: "45", serial: "6789" }. Area cannot be "000" or "666". All segments must be digits.
-- **address**: object with { streetAddress (1-35 chars, starts with letter/digit), city (3-22 chars, letters/spaces), postalCode ("90210" or "90210-1234"), stateOrProvence ("CA" — 2 uppercase letters) }
-- **phone**: US phone number as "202-555-1234" or "2025551234". Area/office codes cannot start with 0 or 1.
-- **collection**: array of string UUIDs
-
-Examples:
-  - { path: "/primaryFiler/firstName", factType: "string", value: "Jane" }
-  - { path: "/filingStatus", factType: "enum", value: { value: "single", enumOptionsPath: "/filingStatusOptions" } }
-  - { path: "/primaryFiler/dateOfBirth", factType: "date", value: { year: 1990, month: 3, day: 15 } }
-  - { path: "/primaryFiler/ssn", factType: "ssn", value: "123-45-6789" }
-  - { path: "/formW2s/#<uuid>/oasdiWages", factType: "dollar", value: "52000.00" }
-  - { path: "/primaryFiler/phone", factType: "phone", value: "202-555-1234" }`,
+    `Set one or more facts on a tax return. factType formats: boolean, string, int, dollar ("52000.00"), date ({year,month,day} or string like "March 15, 1988"), enum ({value,enumOptionsPath}), ssn ("123-45-6789"), address ({streetAddress,city,postalCode,stateOrProvence}), phone ("202-555-1234"), collection (string[]).`,
     {
       taxReturnId: z.string().uuid(),
       facts: z.array(
