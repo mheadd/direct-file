@@ -368,39 +368,7 @@ export function registerTools(server: McpServer, api: DirectFileApiClient) {
   );
 
   // -------------------------------------------------------------------
-  // 9. import_tax_data
-  // -------------------------------------------------------------------
-  server.tool(
-    "import_tax_data",
-    "Fetch pre-populated tax data (W-2s, 1099s, etc.) from the IRS data import service for a tax return. This pulls information the IRS already has on file so the taxpayer doesn't need to re-enter it.",
-    { taxReturnId: z.string().uuid() },
-    async ({ taxReturnId }) => {
-      try {
-        const result = await api.getPopulatedData(taxReturnId);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error importing tax data: ${(err as Error).message}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
-  // -------------------------------------------------------------------
-  // 10. get_user_info
+  // 9. get_user_info
   // -------------------------------------------------------------------
   server.tool(
     "get_user_info",

@@ -192,21 +192,6 @@ describe("DirectFileApiClient", () => {
     });
   });
 
-  describe("getPopulatedData", () => {
-    it("calls GET /df/file/api/v1/taxreturns/:id/populate", async () => {
-      const mockData = { w2s: [] };
-      mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
-
-      const result = await api.getPopulatedData("abc");
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/df/file/api/v1/taxreturns/abc/populate",
-        expect.objectContaining({ method: "GET" })
-      );
-      expect(result).toEqual(mockData);
-    });
-  });
-
   describe("getUserInfo", () => {
     it("calls GET /df/file/api/v1/users/me", async () => {
       const mockData = { email: "test@example.com" };

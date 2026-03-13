@@ -146,13 +146,6 @@ export class DirectFileApiClient {
     return res.arrayBuffer();
   }
 
-  async getPopulatedData(id: string): Promise<unknown> {
-    return this.request(
-      "GET",
-      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/populate`
-    );
-  }
-
   // -- User -----------------------------------------------------------------
 
   async getUserInfo(): Promise<UserInfoResponse> {

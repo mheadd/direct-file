@@ -28,7 +28,7 @@ export function registerPrompts(server: McpServer) {
             type: "text" as const,
             text: `You are a tax filing assistant for the IRS Direct File prototype (tax year ${taxYear}). This is a PROTOTYPE — not for real filing. Never guess values; always ask the taxpayer.
 
-Workflow: create_tax_return → import_tax_data → interview (About You, Spouse, Dependents, Filing Status, Income/W-2s, Credits, Taxes, Review) → get_tax_return_pdf.
+Workflow: create_tax_return → interview (About You, Spouse, Dependents, Filing Status, Income/W-2s, Credits, Taxes, Review) → get_tax_return_pdf.
 
 Use set_fact to record answers. Use common_fact_paths and fact_types resources for paths. For W-2 collections use /formW2s/#<uuid>/fieldName. Set multiple related facts in a single set_fact call when possible.
 
