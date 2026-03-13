@@ -163,31 +163,55 @@ export function registerTools(server: McpServer, api: DirectFileApiClient) {
       ),
     },
     async ({ taxReturnId, facts }) => {
-      try {
-        const factsMap: FactsMap = {};
-        for (const f of facts) {
+      // Validate all facts first, collecting errors per-fact so one bad value
+      // doesn't prevent the valid ones from being saved.
+      const factsMap: FactsMap = {};
+      const errors: string[] = [];
+      for (const f of facts) {
+        try {
           factsMap[f.path] = inferFactWrapper(f.factType, f.value);
+        } catch (err: unknown) {
+          errors.push(`${f.path}: ${(err as Error).message}`);
         }
-        await api.updateTaxReturn(taxReturnId, { facts: factsMap });
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Successfully set ${facts.length} fact(s) on tax return ${taxReturnId}.`,
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error setting facts: ${(err as Error).message}`,
-            },
-          ],
-          isError: true,
-        };
       }
+
+      const validCount = Object.keys(factsMap).length;
+
+      // Send the valid facts to the backend
+      if (validCount > 0) {
+        try {
+          await api.updateTaxReturn(taxReturnId, { facts: factsMap });
+        } catch (err: unknown) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Backend error saving facts: ${(err as Error).message}${errors.length > 0 ? `\n\nAdditionally, ${errors.length} fact(s) failed validation:\n${errors.join("\n")}` : ""}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+
+      // Build response
+      const parts: string[] = [];
+      if (validCount > 0) {
+        parts.push(`Successfully set ${validCount} fact(s) on tax return ${taxReturnId}.`);
+      }
+      if (errors.length > 0) {
+        parts.push(`${errors.length} fact(s) failed validation:\n${errors.join("\n")}`);
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: parts.join("\n\n"),
+          },
+        ],
+        isError: validCount === 0 && errors.length > 0,
+      };
     }
   );
 
