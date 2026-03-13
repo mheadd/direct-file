@@ -51,7 +51,7 @@ describe("DirectFileApiClient", () => {
       mockFetch.mockResolvedValueOnce(jsonResponse([]));
       client.listTaxReturns();
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://example.com/taxreturns",
+        "http://example.com/df/file/api/v1/taxreturns",
         expect.anything()
       );
     });
@@ -74,14 +74,14 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("listTaxReturns", () => {
-    it("calls GET /taxreturns", async () => {
+    it("calls GET /df/file/api/v1/taxreturns", async () => {
       const mockData = [{ id: "abc", taxYear: 2024 }];
       mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
 
       const result = await api.listTaxReturns();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns",
+        "http://localhost:8080/df/file/api/v1/taxreturns",
         expect.objectContaining({ method: "GET" })
       );
       expect(result).toEqual(mockData);
@@ -89,14 +89,14 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("getTaxReturn", () => {
-    it("calls GET /taxreturns/:id", async () => {
+    it("calls GET /df/file/api/v1/taxreturns/:id", async () => {
       const mockData = { id: "abc-123", taxYear: 2024, facts: {} };
       mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
 
       const result = await api.getTaxReturn("abc-123");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns/abc-123",
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc-123",
         expect.objectContaining({ method: "GET" })
       );
       expect(result).toEqual(mockData);
@@ -108,14 +108,14 @@ describe("DirectFileApiClient", () => {
       await api.getTaxReturn("a/b");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns/a%2Fb",
+        "http://localhost:8080/df/file/api/v1/taxreturns/a%2Fb",
         expect.anything()
       );
     });
   });
 
   describe("createTaxReturn", () => {
-    it("calls POST /taxreturns with body", async () => {
+    it("calls POST /df/file/api/v1/taxreturns with body", async () => {
       const mockResponse = { id: "new-id", taxYear: 2024 };
       mockFetch.mockResolvedValueOnce(jsonResponse(mockResponse));
 
@@ -125,7 +125,7 @@ describe("DirectFileApiClient", () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns",
+        "http://localhost:8080/df/file/api/v1/taxreturns",
         expect.objectContaining({
           method: "POST",
           body: JSON.stringify({ taxYear: 2024, facts: {} }),
@@ -136,7 +136,7 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("updateTaxReturn", () => {
-    it("calls PUT /taxreturns/:id with facts", async () => {
+    it("calls POST /df/file/api/v1/taxreturns/:id with facts", async () => {
       mockFetch.mockResolvedValueOnce(textResponse(""));
 
       await api.updateTaxReturn("abc", {
@@ -144,9 +144,9 @@ describe("DirectFileApiClient", () => {
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns/abc",
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc",
         expect.objectContaining({
-          method: "PUT",
+          method: "POST",
           body: JSON.stringify({
             facts: { "/path": { $type: "BooleanWrapper", item: true } },
           }),
@@ -156,13 +156,13 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("signTaxReturn", () => {
-    it("calls POST /taxreturns/:id/sign", async () => {
+    it("calls POST /df/file/api/v1/taxreturns/:id/sign", async () => {
       mockFetch.mockResolvedValueOnce(jsonResponse("signed"));
 
       const result = await api.signTaxReturn("abc");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns/abc/sign",
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc/sign",
         expect.objectContaining({ method: "POST" })
       );
       expect(result).toBe("signed");
@@ -170,13 +170,13 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("submitTaxReturn", () => {
-    it("calls POST /taxreturns/:id/submit", async () => {
+    it("calls POST /df/file/api/v1/taxreturns/:id/submit", async () => {
       mockFetch.mockResolvedValueOnce(jsonResponse("submitted"));
 
       const result = await api.submitTaxReturn("abc");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns/abc/submit",
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc/submit",
         expect.objectContaining({ method: "POST" })
       );
       expect(result).toBe("submitted");
@@ -184,14 +184,14 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("getTaxReturnStatus", () => {
-    it("calls GET /taxreturns/:id/status", async () => {
+    it("calls GET /df/file/api/v1/taxreturns/:id/status", async () => {
       const mockData = { status: "Accepted" };
       mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
 
       const result = await api.getTaxReturnStatus("abc");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns/abc/status",
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc/status",
         expect.objectContaining({ method: "GET" })
       );
       expect(result).toEqual(mockData);
@@ -199,14 +199,14 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("getPopulatedData", () => {
-    it("calls GET /taxreturns/:id/populated-data", async () => {
+    it("calls GET /df/file/api/v1/taxreturns/:id/populate", async () => {
       const mockData = { w2s: [] };
       mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
 
       const result = await api.getPopulatedData("abc");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/taxreturns/abc/populated-data",
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc/populate",
         expect.objectContaining({ method: "GET" })
       );
       expect(result).toEqual(mockData);
@@ -214,14 +214,14 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("getUserInfo", () => {
-    it("calls GET /user-info", async () => {
+    it("calls GET /df/file/api/v1/users/me", async () => {
       const mockData = { email: "test@example.com" };
       mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
 
       const result = await api.getUserInfo();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/user-info",
+        "http://localhost:8080/df/file/api/v1/users/me",
         expect.objectContaining({ method: "GET" })
       );
       expect(result).toEqual(mockData);
@@ -229,13 +229,13 @@ describe("DirectFileApiClient", () => {
   });
 
   describe("keepAlive", () => {
-    it("calls GET /session/keep-alive", async () => {
+    it("calls GET /df/file/api/v1/session/keep-alive", async () => {
       mockFetch.mockResolvedValueOnce(textResponse("ok"));
 
       await api.keepAlive();
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/session/keep-alive",
+        "http://localhost:8080/df/file/api/v1/session/keep-alive",
         expect.objectContaining({ method: "GET" })
       );
     });
@@ -246,7 +246,7 @@ describe("DirectFileApiClient", () => {
       mockFetch.mockResolvedValueOnce(errorResponse(404, "Not Found"));
 
       await expect(api.getTaxReturn("bad-id")).rejects.toThrow(
-        "API GET /taxreturns/bad-id returned 404: Not Found"
+        "API GET /df/file/api/v1/taxreturns/bad-id returned 404: Not Found"
       );
     });
 
@@ -256,7 +256,7 @@ describe("DirectFileApiClient", () => {
       );
 
       await expect(api.listTaxReturns()).rejects.toThrow(
-        "API GET /taxreturns returned 500"
+        "API GET /df/file/api/v1/taxreturns returned 500"
       );
     });
   });

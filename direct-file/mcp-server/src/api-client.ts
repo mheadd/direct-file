@@ -123,30 +123,30 @@ export class DirectFileApiClient {
   // -- Tax Returns ----------------------------------------------------------
 
   async listTaxReturns(): Promise<TaxReturnResponse[]> {
-    return this.request("GET", "/taxreturns");
+    return this.request("GET", "/df/file/api/v1/taxreturns");
   }
 
   async getTaxReturn(id: string): Promise<TaxReturnResponse> {
-    return this.request("GET", `/taxreturns/${encodeURIComponent(id)}`);
+    return this.request("GET", `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}`);
   }
 
   async createTaxReturn(
     body: CreateTaxReturnRequest
   ): Promise<TaxReturnResponse> {
-    return this.request("POST", "/taxreturns", body);
+    return this.request("POST", "/df/file/api/v1/taxreturns", body);
   }
 
   async updateTaxReturn(
     id: string,
     body: UpdateTaxReturnRequest
   ): Promise<void> {
-    await this.request("PUT", `/taxreturns/${encodeURIComponent(id)}`, body);
+    await this.request("POST", `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}`, body);
   }
 
   async signTaxReturn(id: string): Promise<string> {
     return this.request(
       "POST",
-      `/taxreturns/${encodeURIComponent(id)}/sign`,
+      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/sign`,
       {}
     );
   }
@@ -154,7 +154,7 @@ export class DirectFileApiClient {
   async submitTaxReturn(id: string): Promise<string> {
     return this.request(
       "POST",
-      `/taxreturns/${encodeURIComponent(id)}/submit`,
+      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/submit`,
       {}
     );
   }
@@ -162,26 +162,26 @@ export class DirectFileApiClient {
   async getTaxReturnStatus(id: string): Promise<StatusResponse> {
     return this.request(
       "GET",
-      `/taxreturns/${encodeURIComponent(id)}/status`
+      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/status`
     );
   }
 
   async getPopulatedData(id: string): Promise<unknown> {
     return this.request(
       "GET",
-      `/taxreturns/${encodeURIComponent(id)}/populated-data`
+      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/populate`
     );
   }
 
   // -- User -----------------------------------------------------------------
 
   async getUserInfo(): Promise<UserInfoResponse> {
-    return this.request("GET", "/user-info");
+    return this.request("GET", "/df/file/api/v1/users/me");
   }
 
   // -- Session --------------------------------------------------------------
 
   async keepAlive(): Promise<void> {
-    await this.request("GET", "/session/keep-alive");
+    await this.request("GET", "/df/file/api/v1/session/keep-alive");
   }
 }

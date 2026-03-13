@@ -159,7 +159,7 @@ describe("tool handlers", () => {
     } as Response);
 
     await expect(api.signTaxReturn("abc")).rejects.toThrow(
-      "API POST /taxreturns/abc/sign returned 422: Validation failed"
+      "API POST /df/file/api/v1/taxreturns/abc/sign returned 422: Validation failed"
     );
   });
 });
