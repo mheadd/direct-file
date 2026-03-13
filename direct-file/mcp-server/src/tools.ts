@@ -13,8 +13,53 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { DirectFileApiClient } from "./api-client.js";
-import type { FactsMap } from "./api-client.js";
+import type { FactsMap, FactTypeWithItem } from "./api-client.js";
 import { inferFactWrapper } from "./fact-helpers.js";
+
+/**
+ * Common path aliases — maps paths the AI agent frequently guesses
+ * to the actual fact graph paths the backend expects.
+ */
+const PATH_ALIASES: Record<string, string> = {
+  "/primaryFiler/ssn": "/primaryFiler/tin",
+  "/primaryFiler/socialSecurityNumber": "/primaryFiler/tin",
+  "/secondaryFiler/ssn": "/secondaryFiler/tin",
+  "/secondaryFiler/socialSecurityNumber": "/secondaryFiler/tin",
+  "/primaryFiler/phone": "/phone",
+  "/primaryFiler/phoneNumber": "/phone",
+  "/primaryFiler/email": "/email",
+  "/primaryFiler/emailAddress": "/email",
+  "/primaryFiler/address": "/address",
+  "/primaryFiler/isDependent": "/primaryFiler/canBeClaimed",
+  "/primaryFiler/canBeClaimedAsDependent": "/primaryFiler/canBeClaimed",
+  "/secondaryFiler/isDependent": "/secondaryFiler/canBeClaimed",
+};
+
+/**
+ * When the AI sets /primaryFiler/address as a single address fact,
+ * expand it into the individual /address/* fields the backend expects.
+ */
+function expandAddressFact(
+  path: string,
+  wrapper: FactTypeWithItem
+): Record<string, FactTypeWithItem> | null {
+  if (path !== "/address" && path !== "/primaryFiler/address") return null;
+  if (wrapper.$type !== "gov.irs.factgraph.persisters.AddressWrapper") return null;
+
+  const addr = wrapper.item as {
+    streetAddress: string;
+    city: string;
+    postalCode: string;
+    stateOrProvence: string;
+  };
+  const stringType = "gov.irs.factgraph.persisters.StringWrapper";
+  return {
+    "/address/streetAddress": { $type: stringType, item: addr.streetAddress },
+    "/address/city": { $type: stringType, item: addr.city },
+    "/address/postalCode": { $type: stringType, item: addr.postalCode },
+    "/address/stateOrProvence": { $type: stringType, item: addr.stateOrProvence },
+  };
+}
 
 export function registerTools(server: McpServer, api: DirectFileApiClient) {
   // -------------------------------------------------------------------
@@ -163,13 +208,21 @@ export function registerTools(server: McpServer, api: DirectFileApiClient) {
       ),
     },
     async ({ taxReturnId, facts }) => {
-      // Validate all facts first, collecting errors per-fact so one bad value
-      // doesn't prevent the valid ones from being saved.
+      // Validate all facts, applying path aliases and address expansion.
       const factsMap: FactsMap = {};
       const errors: string[] = [];
       for (const f of facts) {
         try {
-          factsMap[f.path] = inferFactWrapper(f.factType, f.value);
+          const resolvedPath = PATH_ALIASES[f.path] ?? f.path;
+          const wrapper = inferFactWrapper(f.factType, f.value);
+
+          // Expand address into individual /address/* fields
+          const expanded = expandAddressFact(resolvedPath, wrapper);
+          if (expanded) {
+            Object.assign(factsMap, expanded);
+          } else {
+            factsMap[resolvedPath] = wrapper;
+          }
         } catch (err: unknown) {
           errors.push(`${f.path}: ${(err as Error).message}`);
         }
@@ -177,39 +230,44 @@ export function registerTools(server: McpServer, api: DirectFileApiClient) {
 
       const validCount = Object.keys(factsMap).length;
 
-      // Send the valid facts to the backend
       if (validCount > 0) {
         try {
+          // Try batch first
           await api.updateTaxReturn(taxReturnId, { facts: factsMap });
-        } catch (err: unknown) {
+        } catch {
+          // Batch failed — fall back to saving each fact individually
+          let savedCount = 0;
+          for (const [path, wrapper] of Object.entries(factsMap)) {
+            try {
+              await api.updateTaxReturn(taxReturnId, { facts: { [path]: wrapper } });
+              savedCount++;
+            } catch {
+              errors.push(`${path}: backend rejected this fact`);
+            }
+          }
+
+          if (savedCount === 0 && errors.length > 0) {
+            return {
+              content: [{ type: "text" as const, text: `All facts rejected by backend:\n${errors.join("\n")}` }],
+              isError: true,
+            };
+          }
+
+          const parts: string[] = [];
+          if (savedCount > 0) parts.push(`Saved ${savedCount} fact(s) on tax return ${taxReturnId}.`);
+          if (errors.length > 0) parts.push(`${errors.length} fact(s) failed:\n${errors.join("\n")}`);
           return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Backend error saving facts: ${(err as Error).message}${errors.length > 0 ? `\n\nAdditionally, ${errors.length} fact(s) failed validation:\n${errors.join("\n")}` : ""}`,
-              },
-            ],
-            isError: true,
+            content: [{ type: "text" as const, text: parts.join("\n\n") }],
+            isError: savedCount === 0,
           };
         }
       }
 
-      // Build response
       const parts: string[] = [];
-      if (validCount > 0) {
-        parts.push(`Successfully set ${validCount} fact(s) on tax return ${taxReturnId}.`);
-      }
-      if (errors.length > 0) {
-        parts.push(`${errors.length} fact(s) failed validation:\n${errors.join("\n")}`);
-      }
-
+      if (validCount > 0) parts.push(`Successfully set ${validCount} fact(s) on tax return ${taxReturnId}.`);
+      if (errors.length > 0) parts.push(`${errors.length} fact(s) failed validation:\n${errors.join("\n")}`);
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: parts.join("\n\n"),
-          },
-        ],
+        content: [{ type: "text" as const, text: parts.join("\n\n") }],
         isError: validCount === 0 && errors.length > 0,
       };
     }
