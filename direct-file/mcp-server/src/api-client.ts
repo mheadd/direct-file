@@ -135,7 +135,7 @@ export class DirectFileApiClient {
     const url = `${this.baseUrl}/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/pdf/${encodeURIComponent(languageCode)}`;
     const res = await fetch(url, {
       method: "POST",
-      headers: this.headers,
+      headers: { ...this.headers, Accept: "application/pdf" },
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
