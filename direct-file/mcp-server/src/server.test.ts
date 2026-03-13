@@ -141,13 +141,17 @@ describe("tool handlers", () => {
     expect(results[0]!.id).toBe("a");
   });
 
-  it("get_submission_status returns status object", async () => {
-    mockFetch.mockResolvedValueOnce(
-      jsonResponse({ status: "Accepted", createdAt: "2024-03-01" })
-    );
+  it("get_tax_return_pdf calls the backend and returns base64 content", async () => {
+    const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-type": "application/pdf" }),
+      arrayBuffer: () => Promise.resolve(pdfBytes.buffer),
+    } as Response);
 
-    const result = await api.getTaxReturnStatus("abc");
-    expect(result.status).toBe("Accepted");
+    const result = await api.getTaxReturnPdf("abc", "en");
+    expect(result.byteLength).toBe(4);
   });
 
   it("API errors are thrown with status and message", async () => {
@@ -158,8 +162,8 @@ describe("tool handlers", () => {
       text: () => Promise.resolve("Validation failed"),
     } as Response);
 
-    await expect(api.signTaxReturn("abc")).rejects.toThrow(
-      "API POST /df/file/api/v1/taxreturns/abc/sign returned 422: Validation failed"
+    await expect(api.getTaxReturnPdf("abc")).rejects.toThrow(
+      "API POST /df/file/api/v1/taxreturns/abc/pdf/en returned 422: Validation failed"
     );
   });
 });

@@ -34,6 +34,16 @@ function errorResponse(status: number, body = "error"): Response {
   } as Response;
 }
 
+function binaryResponse(data: ArrayBuffer, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: new Headers({ "content-type": "application/pdf" }),
+    arrayBuffer: () => Promise.resolve(data),
+    text: () => Promise.resolve("binary"),
+  } as Response;
+}
+
 describe("DirectFileApiClient", () => {
   let api: DirectFileApiClient;
 
@@ -155,46 +165,30 @@ describe("DirectFileApiClient", () => {
     });
   });
 
-  describe("signTaxReturn", () => {
-    it("calls POST /df/file/api/v1/taxreturns/:id/sign", async () => {
-      mockFetch.mockResolvedValueOnce(jsonResponse("signed"));
+  describe("getTaxReturnPdf", () => {
+    it("calls POST /df/file/api/v1/taxreturns/:id/pdf/:lang", async () => {
+      const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer;
+      mockFetch.mockResolvedValueOnce(binaryResponse(pdfBytes));
 
-      const result = await api.signTaxReturn("abc");
+      const result = await api.getTaxReturnPdf("abc", "en");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/df/file/api/v1/taxreturns/abc/sign",
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc/pdf/en",
         expect.objectContaining({ method: "POST" })
       );
-      expect(result).toBe("signed");
+      expect(result.byteLength).toBe(4);
     });
-  });
 
-  describe("submitTaxReturn", () => {
-    it("calls POST /df/file/api/v1/taxreturns/:id/submit", async () => {
-      mockFetch.mockResolvedValueOnce(jsonResponse("submitted"));
+    it("defaults to English when no language specified", async () => {
+      const pdfBytes = new Uint8Array([0x25, 0x50]).buffer;
+      mockFetch.mockResolvedValueOnce(binaryResponse(pdfBytes));
 
-      const result = await api.submitTaxReturn("abc");
+      await api.getTaxReturnPdf("abc");
 
       expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/df/file/api/v1/taxreturns/abc/submit",
-        expect.objectContaining({ method: "POST" })
+        "http://localhost:8080/df/file/api/v1/taxreturns/abc/pdf/en",
+        expect.anything()
       );
-      expect(result).toBe("submitted");
-    });
-  });
-
-  describe("getTaxReturnStatus", () => {
-    it("calls GET /df/file/api/v1/taxreturns/:id/status", async () => {
-      const mockData = { status: "Accepted" };
-      mockFetch.mockResolvedValueOnce(jsonResponse(mockData));
-
-      const result = await api.getTaxReturnStatus("abc");
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        "http://localhost:8080/df/file/api/v1/taxreturns/abc/status",
-        expect.objectContaining({ method: "GET" })
-      );
-      expect(result).toEqual(mockData);
     });
   });
 

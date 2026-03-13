@@ -30,14 +30,6 @@ export interface UpdateTaxReturnRequest {
   surveyOptIn?: boolean | null;
 }
 
-export interface SubmitRequest {
-  // The backend SubmitRequestBody is essentially empty for the prototype.
-}
-
-export interface SignRequest {
-  // The backend SignRequestBody is essentially empty for the prototype.
-}
-
 export interface TaxReturnSubmission {
   submissionId?: string;
   receiptId?: string;
@@ -54,13 +46,6 @@ export interface TaxReturnResponse {
   taxReturnSubmissions?: TaxReturnSubmission[];
   isEditable?: boolean;
   surveyOptIn?: boolean;
-}
-
-export interface StatusResponse {
-  status: string;
-  translationKey?: string;
-  rejectionCodes?: Array<{ code: string; description?: string }>;
-  createdAt?: string;
 }
 
 export interface UserInfoResponse {
@@ -143,27 +128,22 @@ export class DirectFileApiClient {
     await this.request("POST", `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}`, body);
   }
 
-  async signTaxReturn(id: string): Promise<string> {
-    return this.request(
-      "POST",
-      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/sign`,
-      {}
-    );
-  }
-
-  async submitTaxReturn(id: string): Promise<string> {
-    return this.request(
-      "POST",
-      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/submit`,
-      {}
-    );
-  }
-
-  async getTaxReturnStatus(id: string): Promise<StatusResponse> {
-    return this.request(
-      "GET",
-      `/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/status`
-    );
+  async getTaxReturnPdf(
+    id: string,
+    languageCode: string = "en"
+  ): Promise<ArrayBuffer> {
+    const url = `${this.baseUrl}/df/file/api/v1/taxreturns/${encodeURIComponent(id)}/pdf/${encodeURIComponent(languageCode)}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: this.headers,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(
+        `API POST /df/file/api/v1/taxreturns/${encodeURIComponent(id)}/pdf/${encodeURIComponent(languageCode)} returned ${res.status}: ${text}`
+      );
+    }
+    return res.arrayBuffer();
   }
 
   async getPopulatedData(id: string): Promise<unknown> {

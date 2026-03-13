@@ -260,20 +260,35 @@ Examples:
   );
 
   // -------------------------------------------------------------------
-  // 6. sign_tax_return
+  // 6. get_tax_return_pdf
   // -------------------------------------------------------------------
   server.tool(
-    "sign_tax_return",
-    "Digitally sign a completed tax return. This must be done before submission. The return must have all required facts completed with no validation errors.",
-    { taxReturnId: z.string().uuid() },
-    async ({ taxReturnId }) => {
+    "get_tax_return_pdf",
+    "Generate and download a PDF of the tax return. The PDF contains populated IRS forms (1040, schedules, etc.) with all facts currently on the return. This is the final output artifact — the equivalent of the taxpayer's completed return. Available languages: 'en' (English) and 'es' (Spanish).",
+    {
+      taxReturnId: z.string().uuid(),
+      languageCode: z
+        .enum(["en", "es"])
+        .default("en")
+        .describe("Language for the PDF: 'en' for English, 'es' for Spanish"),
+    },
+    async ({ taxReturnId, languageCode }) => {
       try {
-        const result = await api.signTaxReturn(taxReturnId);
+        const pdfBuffer = await api.getTaxReturnPdf(taxReturnId, languageCode);
+        const base64 = Buffer.from(pdfBuffer).toString("base64");
         return {
           content: [
             {
               type: "text" as const,
-              text: `Tax return ${taxReturnId} signed successfully. ${result}`,
+              text: `PDF generated successfully for tax return ${taxReturnId} (${languageCode}). Size: ${pdfBuffer.byteLength} bytes.`,
+            },
+            {
+              type: "resource" as const,
+              resource: {
+                uri: `data:application/pdf;base64,${base64}`,
+                mimeType: "application/pdf",
+                text: base64,
+              },
             },
           ],
         };
@@ -282,71 +297,7 @@ Examples:
           content: [
             {
               type: "text" as const,
-              text: `Error signing tax return: ${(err as Error).message}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
-  // -------------------------------------------------------------------
-  // 7. submit_tax_return
-  // -------------------------------------------------------------------
-  server.tool(
-    "submit_tax_return",
-    "Submit a signed tax return to the IRS Modernized e-File (MeF) system. The return must be signed first. Returns a 202 Accepted — the actual acceptance/rejection arrives asynchronously and can be checked with get_submission_status.",
-    { taxReturnId: z.string().uuid() },
-    async ({ taxReturnId }) => {
-      try {
-        const result = await api.submitTaxReturn(taxReturnId);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Tax return ${taxReturnId} submitted. ${result}`,
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error submitting tax return: ${(err as Error).message}`,
-            },
-          ],
-          isError: true,
-        };
-      }
-    }
-  );
-
-  // -------------------------------------------------------------------
-  // 8. get_submission_status
-  // -------------------------------------------------------------------
-  server.tool(
-    "get_submission_status",
-    "Check the submission status of a tax return. Possible statuses include: Accepted, Rejected, Submitted (pending), Failed, and various error states.",
-    { taxReturnId: z.string().uuid() },
-    async ({ taxReturnId }) => {
-      try {
-        const result = await api.getTaxReturnStatus(taxReturnId);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error getting submission status: ${(err as Error).message}`,
+              text: `Error generating PDF: ${(err as Error).message}`,
             },
           ],
           isError: true,

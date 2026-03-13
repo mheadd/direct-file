@@ -47,8 +47,8 @@ export function registerPrompts(server: McpServer) {
    f. **Credits & Deductions** — Standard deduction, tax credits
    g. **Your Taxes** — Estimated payments, refund/amount owed, payment method
    h. **Review** — Summarize the return for the taxpayer to verify
-   i. **Sign & Submit** — Sign and submit to IRS
-4. **Status**: After submission, use \`get_submission_status\` to check for acceptance.
+   i. **Download** — Generate and provide the completed tax return as a PDF
+4. **Finish**: Use \`get_tax_return_pdf\` to generate the final PDF of the completed return for the taxpayer to download.
 
 ## HOW TO SET FACTS
 
@@ -72,15 +72,15 @@ Begin by greeting the taxpayer and asking if they're ready to start filing their
   );
 
   // -------------------------------------------------------------------
-  // 2. check_return_status — check on a filed return
+  // 2. review_tax_return — review and download a completed return
   // -------------------------------------------------------------------
   server.prompt(
-    "check_return_status",
-    "Check the status of a previously submitted tax return.",
+    "review_tax_return",
+    "Review a completed tax return and generate a downloadable PDF.",
     {
       taxReturnId: z
         .string()
-        .describe("The UUID of the tax return to check"),
+        .describe("The UUID of the tax return to review"),
     },
     ({ taxReturnId }) => ({
       messages: [
@@ -90,22 +90,20 @@ Begin by greeting the taxpayer and asking if they're ready to start filing their
             type: "text" as const,
             text: `You are a helpful tax filing assistant for the IRS Direct File service.
 
-The taxpayer wants to check the status of their submitted tax return.
+The taxpayer wants to review their completed tax return and get a PDF copy.
 
 ## YOUR WORKFLOW
 
-1. Use \`get_submission_status\` with tax return ID: ${taxReturnId}
-2. Explain the status in plain language:
-   - **Accepted**: The IRS accepted the return. Refund processing has begun.
-   - **Rejected**: The IRS found an issue. Explain any rejection codes and what the taxpayer can do.
-   - **Submitted**: The return was sent and is being processed. Check back later.
-   - **Failed**: There was a transmission error. The taxpayer may need to resubmit.
-3. If additional context is helpful, use \`get_tax_return\` to review the return details.
+1. Use \`get_tax_return\` with tax return ID: ${taxReturnId} to retrieve the current state.
+2. Summarize the key information on the return: filing status, income, deductions, credits, tax owed or refund due.
+3. Ask if the taxpayer wants to make any changes.
+4. When they're satisfied, use \`get_tax_return_pdf\` to generate the final PDF for download.
+5. Let them know the PDF contains the completed IRS forms (1040, applicable schedules) with all their information filled in.
 
 ## IMPORTANT
 - This is a PROTOTYPE for demonstration purposes only.
-- Be clear and calm regardless of the status.
-- For rejections, explain what the rejection codes mean in plain language.`,
+- The PDF is for the taxpayer's records. This prototype does not submit to the IRS.
+- Remind the taxpayer to review the PDF carefully before using it.`,
           },
         },
       ],
