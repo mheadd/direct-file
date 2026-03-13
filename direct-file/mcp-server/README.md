@@ -6,7 +6,7 @@
 
 ## What This Is
 
-This MCP server wraps the existing Direct File Spring Boot backend API, exposing tax-return operations as tools, reference data as resources, and guided workflows as prompts that an AI agent (e.g., Claude, GPT, or any MCP-compatible client) can use to help a taxpayer file their federal return through a conversational interface.
+This MCP server wraps the existing Direct File Spring Boot backend API, exposing tax-return operations as tools, reference data as resources, and guided workflows as prompts that an AI agent (e.g., Claude, GPT, or any MCP-compatible client) can use to help a taxpayer prepare their federal return through a conversational interface and produce a completed PDF.
 
 ### Architecture
 
@@ -21,7 +21,7 @@ The MCP server is a*thin adapter layer — it does not duplicate business logic.
 
 ## What's Included
 
-### Tools (10)
+### Tools (8)
 
 | Tool | Description |
 |:------|:-------------|
@@ -30,9 +30,7 @@ The MCP server is a*thin adapter layer — it does not duplicate business logic.
 | `list_tax_returns` | List all tax returns for the current user |
 | `set_fact` | Set one or more facts on a tax return (typed wrappers) |
 | `get_fact` | Read specific fact values from a tax return |
-| `sign_tax_return` | Electronically sign a completed return |
-| `submit_tax_return` | Submit a signed return for e-filing |
-| `get_submission_status` | Check the status of a submitted return |
+| `get_tax_return_pdf` | Generate and download a PDF of the completed tax return |
 | `import_tax_data` | Import pre-populated IRS data (W-2s, 1099s, etc.) |
 | `get_user_info` | Get authenticated user information |
 
@@ -50,7 +48,7 @@ The MCP server is a*thin adapter layer — it does not duplicate business logic.
 | Prompt | Description |
 |:--------|:-------------|
 | `file_tax_return` | Guided workflow for filing a complete federal tax return |
-| `check_return_status` | Check the status of a previously submitted return |
+| `review_tax_return` | Review a completed return and generate a downloadable PDF |
 | `explain_tax_concept` | Educational helper for tax concepts and terminology |
 
 ## Prerequisites
@@ -108,6 +106,25 @@ Add to your MCP client configuration:
 npm run dev   # Recompiles on file changes
 ```
 
+## Design Decisions: How This Prototype Differs from Direct File
+
+### PDF generation instead of IRS submission
+
+The production Direct File web application was operated by the IRS itself. When a taxpayer completed their return, the application would electronically sign it, submit it to the IRS Modernized e-File (MeF) system, and then poll for acceptance or rejection. This made sense because Direct File *was* the IRS filing pipeline.
+
+This MCP server prototype operates in a different context — it wraps the Direct File backend to demonstrate how tax filing could work through a conversational AI interface, but it is not connected to IRS infrastructure. Submitting returns to MeF is out of scope and would be inappropriate for a prototype.
+
+Instead, the final output artifact is a **downloadable PDF** of the completed tax return. The backend's existing `PdfService` generates populated IRS forms (1040, applicable schedules) from the fact graph using Apache PDFBox. The `get_tax_return_pdf` tool calls this endpoint and returns the PDF as a base64-encoded resource that MCP clients can save or display.
+
+This means the prototype's end-to-end workflow is:
+
+1. Create a tax return
+2. Walk through the interview (setting facts)
+3. Review the completed return
+4. **Download the PDF** — rather than sign → submit → poll for status
+
+The three tools that handled IRS submission (`sign_tax_return`, `submit_tax_return`, `get_submission_status`) have been intentionally removed, along with their corresponding API client methods and the `check_return_status` prompt. They have been replaced by `get_tax_return_pdf` and the `review_tax_return` prompt.
+
 ## What This Prototype Does NOT Include
 
 This is explicitly a prototype to demonstrate architectural feasibility. It does not include:
@@ -129,7 +146,7 @@ mcp-server/
 │   ├── index.ts          # Entrypoint — server setup, config, transport
 │   ├── api-client.ts     # HTTP client wrapping the Direct File REST API
 │   ├── fact-helpers.ts   # Typed fact wrapper factory functions
-│   ├── tools.ts          # MCP tool definitions (10 tools)
+│   ├── tools.ts          # MCP tool definitions (8 tools)
 │   ├── resources.ts      # MCP resource definitions (4 resources)
 │   └── prompts.ts        # MCP prompt definitions (3 prompts)
 ├── dist/                 # Compiled JavaScript (generated)
