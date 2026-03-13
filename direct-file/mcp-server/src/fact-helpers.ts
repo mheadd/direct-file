@@ -235,6 +235,18 @@ export function inferFactWrapper(
     }
     case "day":
     case "date": {
+      // Accept structured { year, month, day } or a date string like "March 15, 1988"
+      if (typeof value === "string") {
+        const parsed = new Date(value);
+        if (isNaN(parsed.getTime())) {
+          throw new FactValidationError(
+            "date",
+            `could not parse date string "${value}". Use { year, month, day } or a recognizable date like "March 15, 1988"`
+          );
+        }
+        // Use UTC to avoid timezone-related off-by-one day issues
+        return dayFact(parsed.getUTCFullYear(), parsed.getUTCMonth() + 1, parsed.getUTCDate());
+      }
       const d = value as { year: number; month: number; day: number };
       return dayFact(d.year, d.month, d.day);
     }

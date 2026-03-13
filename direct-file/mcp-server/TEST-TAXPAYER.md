@@ -9,10 +9,22 @@
 | First Name | Maria |
 | Middle Initial | T |
 | Last Name | Santos |
-| Date of Birth | March 15, 1988 |
+| Date of Birth | March 15, 1988 (year: 1988, month: 3, day: 15) |
 | SSN | 321-54-6789 |
-| Phone | 202-555-0147 |
+| Phone | 202-555-3147 |
 | Email | maria.santos@example.com |
+
+Copy / Paste from below:
+```
+First Name: Maria
+Middle Initial: T
+Last Name: Santos
+Date of Birth: year 1988, month 3, day 15
+SSN: 321-54-6789
+Phone: 202-555-3147
+Email: maria.santos@example.com
+Dependent status: not a dependent
+```
 
 ### Address
 
@@ -23,9 +35,21 @@
 | State | IL |
 | ZIP Code | 62704 |
 
+Copy / Paste from below:
+```
+Street Address: 742 Evergreen Terrace
+City: Springfield
+State: IL
+ZIP Code: 62704
+```
+
 ## Filing Status
 
 **Single** (no spouse, no dependents)
+Copy / Paste from below:
+```
+Filing status: single
+```
 
 ## W-2 Wage and Tax Statement
 
@@ -47,6 +71,22 @@
 | 5 | Medicare wages and tips | 58250.00 |
 | 6 | Medicare tax withheld | 844.63 |
 
+Copy / Paste from below:
+```
+Employer Name: Acme Corporation
+Employer EIN: 12-3456789
+Box 1 - Wages, tips, other compensation: 58250.00
+Box 2 - Federal income tax withheld: 7450.00
+Box 3 - Social Security wages: 58250.00
+Box 4 - Social Security tax withheld: 3611.50
+Box 5 - Medicare wages and tips: 58250.00
+Box 6 - Medicare tax withheld: 844.63
+State: IL
+State ID: 123-456-789
+State wages: 58250.00
+State tax withheld: 2854.25
+```
+
 ### State Information (W-2 boxes 15–17)
 
 | Field | Value |
@@ -64,6 +104,13 @@
 | Routing Number | 071000013 |
 | Account Number | 123456789 |
 
+Copy / Paste from below:
+```
+Account Type: Checking
+Routing Number: 071000013
+Account Number: 123456789
+```
+
 ---
 
 ## Alternate Test Scenario: Married Filing Jointly
@@ -77,10 +124,21 @@ Use this data instead of (or in addition to) the single filer above to test a jo
 | First Name | James |
 | Middle Initial | R |
 | Last Name | Wilson |
-| Date of Birth | July 22, 1985 |
+| Date of Birth | July 22, 1985 (year: 1985, month: 7, day: 22) |
 | SSN | 451-23-6780 |
-| Phone | 312-555-0198 |
+| Phone | 312-555-2198 |
 | Email | james.wilson@example.com |
+
+Copy / Paste from below:
+```
+First Name: James
+Middle Initial: R
+Last Name: Wilson
+Date of Birth: year 1985, month 7, day 22
+SSN: 451-23-6780
+Phone: 312-555-2198
+Email: james.wilson@example.com
+```
 
 ### Spouse
 
@@ -89,8 +147,17 @@ Use this data instead of (or in addition to) the single filer above to test a jo
 | First Name | Elena |
 | Middle Initial | M |
 | Last Name | Wilson |
-| Date of Birth | November 3, 1987 |
+| Date of Birth | November 3, 1987 (year: 1987, month: 11, day: 3) |
 | SSN | 452-87-6543 |
+
+Copy / Paste from below:
+```
+First Name: Elena
+Middle Initial: M
+Last Name: Wilson
+Date of Birth: year 1987, month 11, day 3
+SSN: 452-87-6543
+```
 
 ### Address (shared)
 
@@ -101,9 +168,22 @@ Use this data instead of (or in addition to) the single filer above to test a jo
 | State | IL |
 | ZIP Code | 60614-2301 |
 
+Copy / Paste from below:
+```
+Street Address: 1600 Oak Boulevard
+City: Chicago
+State: IL
+ZIP Code: 60614-2301
+```
+
 ### Filing Status
 
 **Married Filing Jointly**
+
+Copy / Paste from below:
+```
+Filing status: married filing jointly
+```
 
 ### Dependent
 
@@ -111,10 +191,20 @@ Use this data instead of (or in addition to) the single filer above to test a jo
 |:------|:------|
 | First Name | Sofia |
 | Last Name | Wilson |
-| Date of Birth | April 10, 2018 |
+| Date of Birth | April 10, 2018 (year: 2018, month: 4, day: 10) |
 | SSN | 453-12-9876 |
 | Relationship | Daughter |
 | Months Lived in Home | 12 |
+
+Copy / Paste from below:
+```
+First Name: Sofia
+Last Name: Wilson
+Date of Birth: year 2018, month 4, day 10
+SSN: 453-12-9876
+Relationship: Daughter
+Months Lived in Home: 12
+```
 
 ### W-2 #1 — Primary Filer (James)
 
@@ -132,6 +222,18 @@ Use this data instead of (or in addition to) the single filer above to test a jo
 | 5 | Medicare wages and tips | 72500.00 |
 | 6 | Medicare tax withheld | 1051.25 |
 
+Copy / Paste from below:
+```
+Employer Name: Midwest Industries
+Employer EIN: 36-7654321
+Box 1 - Wages, tips, other compensation: 72500.00
+Box 2 - Federal income tax withheld: 9800.00
+Box 3 - Social Security wages: 72500.00
+Box 4 - Social Security tax withheld: 4495.00
+Box 5 - Medicare wages and tips: 72500.00
+Box 6 - Medicare tax withheld: 1051.25
+```
+
 ### W-2 #2 — Spouse (Elena)
 
 | Field | Value |
@@ -148,6 +250,18 @@ Use this data instead of (or in addition to) the single filer above to test a jo
 | 5 | Medicare wages and tips | 45800.00 |
 | 6 | Medicare tax withheld | 664.10 |
 
+Copy / Paste from below:
+```
+Employer Name: Lakeside Medical Group
+Employer EIN: 36-9876543
+Box 1 - Wages, tips, other compensation: 45800.00
+Box 2 - Federal income tax withheld: 5200.00
+Box 3 - Social Security wages: 45800.00
+Box 4 - Social Security tax withheld: 2839.60
+Box 5 - Medicare wages and tips: 45800.00
+Box 6 - Medicare tax withheld: 664.10
+```
+
 ### Bank Account (for refund direct deposit)
 
 | Field | Value |
@@ -155,6 +269,13 @@ Use this data instead of (or in addition to) the single filer above to test a jo
 | Account Type | Savings |
 | Routing Number | 071000013 |
 | Account Number | 987654321 |
+
+Copy / Paste from below:
+```
+Account Type: Savings
+Routing Number: 071000013
+Account Number: 987654321
+```
 
 ---
 

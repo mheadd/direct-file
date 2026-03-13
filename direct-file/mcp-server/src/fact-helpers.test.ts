@@ -291,6 +291,24 @@ describe("fact-helpers", () => {
       );
     });
 
+    it("dispatches date from string like 'March 15, 1988'", () => {
+      const result = inferFactWrapper("date", "March 15, 1988");
+      expect(result.$type).toBe("gov.irs.factgraph.persisters.DayWrapper");
+      expect(result.item).toEqual({ year: 1988, month: 3, day: 15 });
+    });
+
+    it("dispatches date from string like '1985-07-22'", () => {
+      const result = inferFactWrapper("date", "1985-07-22");
+      expect(result.$type).toBe("gov.irs.factgraph.persisters.DayWrapper");
+      expect(result.item).toEqual({ year: 1985, month: 7, day: 22 });
+    });
+
+    it("rejects unparseable date strings", () => {
+      expect(() => inferFactWrapper("date", "not a date")).toThrow(
+        "could not parse date string"
+      );
+    });
+
     it("dispatches enum", () => {
       const result = inferFactWrapper("enum", {
         value: "single",
